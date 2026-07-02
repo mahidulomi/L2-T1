@@ -1,0 +1,195 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+class Edge
+{ 
+public:
+    int u, v, wt, id; // Originial position track korar jonno 'id' add kora hoyeche
+    Edge(int u, int v, int wt, int id)
+    {
+        this->u = u;
+        this->v = v;
+        this->wt = wt;
+        this->id = id;
+    }
+    // comparator function for sorting edges based on weight
+    bool operator<(const Edge &e) const
+    {
+        return this->wt < e.wt;
+    }
+};
+
+class Graph
+{
+    int V;
+    vector<Edge> edges;
+    vector<int> par, rank;
+    
+    // Bridge find korar jonno global variables
+    vector<vector<pair<int, int>>> adj; // {neighbor, edge_id}
+    vector<int> tin, low, visited;
+    int timer;
+    vector<string> ans;
+
+public:
+    Graph(int V, int M)
+    {
+        this->V = V;
+        for (int i = 0; i <= V; i++)
+        {
+            par.push_back(i);
+            rank.push_back(0);
+        }
+        adj.resize(V + 1);
+        tin.resize(V + 1);
+        low.resize(V + 1);
+        visited.resize(V + 1, 0);
+        ans.resize(M, "none");
+    }
+
+    void addedge(int u, int v, int wt, int id)
+    {
+        edges.push_back(Edge(u, v, wt, id));
+    }
+
+    int find(int x)
+    {
+        if (par[x] == x)
+            return x;
+        return par[x] = find(par[x]);
+    }
+
+    void union_set(int a, int b)
+    {
+        int parA = find(a);
+        int parB = find(b);
+        if (parA == parB)
+            return;
+
+        if (rank[parB] == rank[parA])
+        {
+            par[parB] = parA;
+            rank[parA]++;
+        }
+        else if (rank[parA] > rank[parB])
+        {
+            par[parB] = parA;
+        }
+        else
+        {
+            par[parA] = parB;
+        }
+    }
+
+    // Bridge find korar jonno DFS function (Tarjan's Algorithm)
+    void dfs(int u, int p_edge_id)
+    {
+        visited[u] = true;
+        tin[u] = low[u] = ++timer;
+        for (auto &edge : adj[u])
+        {
+            int v = edge.first;
+            int edge_id = edge.second;
+            if (edge_id == p_edge_id) continue;
+            
+            if (visited[v])
+            {
+                low[u] = min(low[u], tin[v]);
+            }
+            else
+            {
+                dfs(v, edge_id);
+                low[u] = min(low[u], low[v]);
+                if (low[v] > tin[u])
+                {
+                    ans[edge_id] = "any"; // Seta oboshshoi shob MST te thakbe
+                }
+            }
+        }
+    }
+
+    void kruskalMST()
+    {
+        sort(edges.begin(), edges.end());
+        int m = edges.size();
+        
+        int i = 0;
+        while (i < m)
+        {
+            int j = i;
+            // Shoman weight er shobgulo edge eksathe group kora
+            while (j < m && edges[j].wt == edges[i].wt)
+            {
+                j++;
+            }
+
+            vector<int> components; // Choto local graph bananor jonno node list
+            
+            // Step 1: Tarjan's algorithm er jonno graph structure ready kora
+            for (int k = i; k < j; k++)
+            {
+                int u = find(edges[k].u);
+                int v = find(edges[k].v);
+                if (u != v)
+                {
+                    ans[edges[k].id] = "at least one"; // Prothomoto dore nicchi "at least one"
+                    adj[u].push_back({v, edges[k].id});
+                    adj[v].push_back({u, edges[k].id});
+                    components.push_back(u);
+                    components.push_back(v);
+                }
+            }
+
+            // Step 2: DFS run kore Bridge/Any check kora
+            timer = 0;
+            for (int node : components)
+            {
+                if (!visited[node])
+                {
+                    dfs(node, -1);
+                }
+            }
+
+            // Step 3: Global vectors properly clean kora ebong DSU te core nodes add kora
+            for (int node : components)
+            {
+                adj[node].clear();
+                visited[node] = 0;
+            }
+            
+            for (int k = i; k < j; k++)
+            {
+                union_set(edges[k].u, edges[k].v);
+            }
+
+            i = j; // Next group er dike agano
+        }
+
+        // Final output sequence maintain kore print kora
+        for (int k = 0; k < m; k++)
+        {
+            cout << ans[k] << "\n";
+        }
+    }
+};
+
+int main()
+{
+    
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int n, m;
+    if (cin >> n >> m)
+    {
+        Graph g(n, m);
+        for (int i = 0; i < m; i++)
+        {
+            int u, v, wt;
+            cin >> u >> v >> wt;
+            g.addedge(u, v, wt, i);
+        }
+        g.kruskalMST();
+    }
+    return 0;
+}
