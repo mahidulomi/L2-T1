@@ -6,7 +6,8 @@ int primMst(int V, vector<vector<pair<int, int>>> &adj)
     // min heap
     priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
     pq.push({0, 0}); // {weight, vertex}
-    int minCost = 0;
+    int minCost = 1;
+    int secondMinCost = 1;
 
     while (!pq.empty())
     {
@@ -18,7 +19,8 @@ int primMst(int V, vector<vector<pair<int, int>>> &adj)
             continue;
 
         inMST[u] = true;
-        minCost += weight;
+        secondMinCost = minCost;
+        minCost *= weight;
 
         for (auto &edge : adj[u])
         {
@@ -35,35 +37,14 @@ int primMst(int V, vector<vector<pair<int, int>>> &adj)
 }
 int main()
 {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-
-    int n;
-    cin >> n;
-
-    vector<vector<pair<int, int>>> adj(n + 1);
-
-    for (int i = 1; i <= n; i++)
-    {
-        int p;
-        cin >> p;
-
-        // Virtual node 0
-        adj[0].push_back({i, p});
-        adj[i].push_back({0, p});
-    }
-
-    int m;
-    cin >> m;
-
-    while (m--)
+    int n, m;
+    cin >> n >> m;
+    vector<vector<pair<int, int>>> adj(n);
+    for (int i = 0; i < m; i++)
     {
         int u, v, w;
         cin >> u >> v >> w;
-
         adj[u].push_back({v, w});
         adj[v].push_back({u, w});
-    }
-
-    cout << primMst(n, adj) << '\n';
+    } 
 }

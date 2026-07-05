@@ -48,7 +48,7 @@ int main()
     adj[2].push_back({1, 5});
     adj[3].push_back({0, 5});
     adj[3].push_back({2, 5});
-
+  
     cout<< "Mininum Cost Spanning Tree: " <<primMst(V,adj) << endl;
     return 0;
 }
