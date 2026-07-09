@@ -1,127 +1,132 @@
-#include <iostream>
-#include <vector>
-#include <climits>
-#include <algorithm>
-
+#include <bits/stdc++.h>
 using namespace std;
-class edge
+
+class Edge
 {
 public:
-    int u, v, wt;
-    edge(int u, int v, int wt)
+    int u, v;
+    long long wt;
+
+    Edge(int u, int v, long long wt)
     {
         this->u = u;
         this->v = v;
         this->wt = wt;
     }
-    bool operator<(const edge &e) const
+
+    bool operator<(const Edge &e) const
     {
-        return this->wt < e.wt;
+        return wt < e.wt;
     }
 };
-class graph
+
+class Graph
 {
     int V;
-    vector<edge> edges;
-    vector<int> parent, rank;
-    int m;
+    vector<Edge> edges;
+    vector<int> parent, Rank;
 
 public:
-    graph(int V, int m)
+    Graph(int V)
     {
         this->V = V;
+
         parent.resize(V + 1);
-        rank.resize(V + 1, 0);
+        Rank.resize(V + 1, 0);
 
         for (int i = 1; i <= V; i++)
             parent[i] = i;
-        this->m = m;
     }
-    void addedge(int u, int v, int wt)
+
+    void addEdge(int u, int v, long long wt)
     {
-        edges.push_back(edge(u, v, wt));
+        edges.push_back(Edge(u, v, wt));
     }
+
     int find(int x)
     {
         if (parent[x] == x)
             return x;
+
         return parent[x] = find(parent[x]);
     }
+
     void union_set(int a, int b)
     {
-        int parA = find(a);
-        int parB = find(b);
-        if (parA == parB)
+        int pa = find(a);
+        int pb = find(b);
+
+        if (pa == pb)
             return;
 
-        if (rank[parB] == rank[parA])
-        {
-            parent[parB] = parA;
-            rank[parA]++;
-        }
-        else if (rank[parA] > rank[parB])
-        {
-            parent[parB] = parA;
-        }
+        if (Rank[pa] < Rank[pb])
+            parent[pa] = pb;
+        else if (Rank[pa] > Rank[pb])
+            parent[pb] = pa;
         else
         {
-            parent[parA] = parB;
+            parent[pb] = pa;
+            Rank[pa]++;
         }
     }
-    void kruskal(long long total_cost, int number_of_edges)
+
+    void kruskal(int M, long long totalCost)
     {
-        vector<edge> ans;
-        vector<edge> not_included;
         sort(edges.begin(), edges.end());
-        int cost = 0;
-        for (int i = 0; i < edges.size(); i++)
+
+        vector<Edge> mst;
+        long long mstCost = 0;
+        int cnt = 0;
+
+        for (auto &e : edges)
         {
-            edge e = edges[i];
             if (find(e.u) != find(e.v))
             {
                 union_set(e.u, e.v);
-                cost += e.wt;
-                ans.push_back(e);
-            }
-            if(find(e.u) == find(e.v))
-            {
-                not_included.push_back(e);
+                mst.push_back(e);
+                mstCost += e.wt;
+                cnt++;
             }
         }
-        if (ans.size() != V - 1)
+ 
+        if (cnt != V - 1)
         {
-            cout << "IMPOSSIBLE\n";
+            cout << "Impossible\n";
             return;
         }
-         for (auto e : not_included)
-        {
-            cout << e.u << " " << e.v << " " << e.wt << '\n';
-        }
-        cout << number_of_edges - ans.size() << endl;
-        cout << total_cost - cost << endl;
-        cout << cost << endl;
 
-        for (auto e : ans)
+        cout << "Routes shut down: " << M - (V - 1) << endl;
+        cout << "Total savings: " << totalCost - mstCost << endl;
+        cout << "Operational routes:\n";
+
+        for (auto &e : mst)
         {
-            cout << e.u << " " << e.v << " " << e.wt << '\n';
+            cout << e.u << " " << e.v << " " << e.wt << endl;
         }
     }
 };
 
 int main()
 {
-    int n, m;
-    cin >> n >> m;
-    graph g(n, m);
-    long long total_cost = 0;
-    int number_of_edges = 0;
-    for (int i = 0; i < m; i++)
+    int N, M;
+    cin >> N >> M;
+
+    Graph g(N);
+
+    long long totalCost = 0;
+
+    for (int i = 0; i < M; i++)
     {
-        int u, v, wt;
-        cin >> u >> v >> wt;
-        g.addedge(u, v, wt);
-        total_cost += wt;
-        number_of_edges++;
+        int u, v;
+        long long w;
+
+        cin >> u >> v >> w;
+
+        g.addEdge(u, v, w);
+        totalCost += w;
     }
-    g.kruskal(total_cost, number_of_edges);
+
+    g.kruskal(M, totalCost);
+
+    return 0;
 }

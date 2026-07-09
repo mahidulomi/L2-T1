@@ -1,8 +1,8 @@
 #include <bits/stdc++.h>
 using namespace std;
 class Edge
-{ 
-    public :
+{
+public:
     int u, v, wt;
     Edge(int u, int v, int wt)
     {
@@ -27,10 +27,13 @@ public:
     Graph(int V)
     {
         this->V = V;
-        for (int i = 0; i < V; i++)
+
+        par.resize(V + 1);
+        rank.resize(V + 1, 0);
+
+        for (int i = 1; i <= V; i++)
         {
-            par.push_back(i);
-            rank.push_back(0);
+            par[i] = i;
         }
     }
     void addedge(int u, int v, int wt)
@@ -73,26 +76,24 @@ public:
         for (int i = 0; i < edges.size(); i++)
         {
             Edge e = edges[i];
-            int parU = find(e.u);
-            int parV = find(e.v);
-            if (parU != parV)
+            if (find(e.u) != find(e.v))
             {
-                union_set(parU, parV);
+                union_set(e.u, e.v);
                 minCost += e.wt;
             }
         }
-        cout << "Minimum cost of MST: " << minCost << endl;
+            cout << "Minimum cost of MST: " << minCost << endl;
+        }
+    };
+
+    int main()
+    {
+        Graph g(4);
+
+        g.addedge(1, 2, 10);
+        g.addedge(1, 3, 6);
+        g.addedge(1, 4, 5);
+        g.addedge(2, 3, 15);
+        g.addedge(3, 4, 4);
+        g.kruskalMST();
     }
-};
-
-int main()
-{
-    Graph g(4);
-
-    g.addedge(0, 1, 10);
-    g.addedge(0, 2, 6);
-    g.addedge(0, 3, 5);
-    g.addedge(1, 2, 15);
-    g.addedge(2, 3, 4);
-    g.kruskalMST();
-}
