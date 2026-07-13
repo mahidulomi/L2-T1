@@ -46,15 +46,15 @@ void dijkstra(int V, vector<vector<Edge>> &g, int src)
 
 int main()
 {
-    int V = 6;
-    vector<vector<Edge>> g(V);
-    g[0].push_back(Edge(1, 4));
-    g[0].push_back(Edge(2, 3));
-    g[1].push_back(Edge(2, 1));
-    g[1].push_back(Edge(3, 2));
-    g[2].push_back(Edge(3, 4));
-    g[3].push_back(Edge(4, 2));
-    g[4].push_back(Edge(5, 3));
-    dijkstra(V, g, 0);
+    int V,m;
+    cin >> V >> m;
+    vector<vector<Edge>> g(V+1);
+    for(int i = 1; i <= m; i++)
+    {
+        int u, v, w;
+        cin >> u >> v >> w;
+        g[u].push_back(Edge(v, w));
+    }
+    dijkstra(V, g, 1);
     return 0;
 }
