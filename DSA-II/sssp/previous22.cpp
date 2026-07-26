@@ -22,7 +22,7 @@ void dijkstra(int V, vector<vector<Edge>> &g, int src, int dest, int K) {
     dist[src] = 0;
     time_taken[src] = 0;
 
-    // priority_queue elements: {total_cost, current_node}
+    
     priority_queue<pair<long long, int>, vector<pair<long long, int>>, greater<pair<long long, int>>> pq;
     pq.push({0, src});
 
@@ -39,11 +39,11 @@ void dijkstra(int V, vector<vector<Edge>> &g, int src, int dest, int K) {
             int t = edge.time;
             int c = edge.weight;
 
-            // Intermediate transfer penalty check
+         
             int wait_time = (u == src) ? 0 : 1;
 
             int next_time = time_taken[u] + t + wait_time;
-            // Total cost for this edge = travel cost + travel time cost + wait time cost
+          
             long long next_cost = curr_cost + c + (1LL * t * K) + (1LL * wait_time * K);
 
             if (next_cost < dist[v]) {
@@ -55,13 +55,12 @@ void dijkstra(int V, vector<vector<Edge>> &g, int src, int dest, int K) {
         } 
     }
 
-    // Checking if path exists
+   
     if (dist[dest] == LLONG_MAX) {
         cout << "Error\n";
         return;
     }
 
-    // Path Reconstruction
     vector<int> path;
     int curr = dest;
     while (curr != -1) {
@@ -70,13 +69,13 @@ void dijkstra(int V, vector<vector<Edge>> &g, int src, int dest, int K) {
     }
     reverse(path.begin(), path.end());
 
-    // Formatting Path string
+
     for (int i = 0; i < path.size(); i++) {
         cout << path[i];
         if (i < path.size() - 1) cout << "->";
     }
     
-    // Output total time and total cost
+
     cout << " " << time_taken[dest] << " " << dist[dest] << "\n";
 }
 
@@ -91,7 +90,7 @@ int main() {
     for (int i = 1; i <= x; i++) {
         int u, v, t, w;
         cin >> u >> v >> t >> w;
-        // Bidirectional edges inserted
+ 
         g[u].push_back(Edge(v, w, t));
         g[v].push_back(Edge(u, w, t));
     }

@@ -37,7 +37,7 @@ int main()
             dist[u][v] = max(dist[u][v], rate);
         }
 
-        // Floyd-Warshall to find max path between any two different nodes
+
         for (int k = 0; k < n; k++) 
         {
             for (int i = 0; i < n; i++) 
@@ -52,7 +52,7 @@ int main()
             }
         }
 
-        // Check if node 'i' can participate in any arbitrage cycle via node 'j'
+    
         vector<string> result;
         for (int i = 0; i < n; i++) 
         {
