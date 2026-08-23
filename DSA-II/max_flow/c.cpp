@@ -12,7 +12,8 @@ public:
     }
 };
 
-bool dfs(vector<vector<edge>> &adj,
+// Edmonds-Karp uses BFS to find the shortest augmenting path
+bool bfs(vector<vector<edge>> &adj,
          vector<vector<int>> &capacity,
          vector<int> &parent,
          int src,
@@ -21,16 +22,16 @@ bool dfs(vector<vector<edge>> &adj,
     int n = adj.size();
 
     vector<bool> vis(n, false);
-    stack<int> st;
+    queue<int> q;
 
-    st.push(src);
+    q.push(src);
     vis[src] = true;
     parent[src] = -1;
 
-    while (!st.empty())
+    while (!q.empty())
     {
-        int u = st.top();
-        st.pop();
+        int u = q.front();
+        q.pop();
 
         for (auto e : adj[u])
         {
@@ -40,7 +41,7 @@ bool dfs(vector<vector<edge>> &adj,
             {
                 vis[v] = true;
                 parent[v] = u;
-                st.push(v);
+                q.push(v);
 
                 if (v == sink)
                     return true;
@@ -51,29 +52,27 @@ bool dfs(vector<vector<edge>> &adj,
     return false;
 }
 
-int fordFulkerson(vector<vector<edge>> &adj,
-                  vector<vector<int>> &capacity,
-                  int src,
-                  int sink)
+int edmondsKarp(vector<vector<edge>> &adj,
+                 vector<vector<int>> &capacity,
+                 int src,
+                 int sink)
 {
     int n = adj.size();
-
     vector<int> parent(n);
-
     int maxFlow = 0;
 
-    while (dfs(adj, capacity, parent, src, sink))
+    while (bfs(adj, capacity, parent, src, sink))
     {
         int pathFlow = INT_MAX;
 
-        // Find minimum residual capacity
+        // Find minimum residual capacity along the path
         for (int v = sink; v != src; v = parent[v])
         {
             int u = parent[v];
             pathFlow = min(pathFlow, capacity[u][v]);
         }
 
-        // Update residual graph
+        // Update residual capacities
         for (int v = sink; v != src; v = parent[v])
         {
             int u = parent[v];
@@ -88,69 +87,85 @@ int fordFulkerson(vector<vector<edge>> &adj,
     return maxFlow;
 }
 
+void solve()
+{
+    int P, C;
+    if (!(cin >> P >> C))
+        return;
+
+    vector<int> plant_supply(P);
+    for (int i = 0; i < P; i++)
+    {
+        cin >> plant_supply[i];
+    }
+
+    vector<int> city_demand(C);
+    for (int i = 0; i < C; i++)
+    {
+        cin >> city_demand[i];
+    }
+
+    int M;
+    cin >> M;
+
+    // Node definitions:
+    // Super Source = 0
+    // Plants = 1 to P
+    // Cities = P + 1 to P + C
+    // Super Sink = P + C + 1
+
+    int src = 0;
+    int sink = P + C + 1;
+    int total_nodes = sink + 1;
+
+    vector<vector<edge>> adj(total_nodes);
+    vector<vector<int>> capacity(total_nodes, vector<int>(total_nodes, 0));
+
+    // 1. Connect Super Source (0) to Power Plants (1 to P)
+    for (int i = 0; i < P; i++)
+    {
+        int plant_node = i + 1;
+        adj[src].push_back(edge(plant_node));
+        adj[plant_node].push_back(edge(src));
+        capacity[src][plant_node] += plant_supply[i];
+    }
+
+    // 2. Connect Transmission Lines (P Plants & C Cities)
+    for (int i = 0; i < M; i++)
+    {
+        int u, v, w;
+        cin >> u >> v >> w;
+
+        // Shift 0-based input nodes to 1-based internal structure
+        int real_u = u + 1;
+        int real_v = v + 1;
+
+        adj[real_u].push_back(edge(real_v));
+        adj[real_v].push_back(edge(real_u));
+        capacity[real_u][real_v] += w; // Supports multiple edges if present
+    }
+
+    // 3. Connect Cities (P + 1 to P + C) to Super Sink
+    for (int j = 0; j < C; j++)
+    {
+        int city_node = P + 1 + j;
+        adj[city_node].push_back(edge(sink));
+        adj[sink].push_back(edge(city_node));
+        capacity[city_node][sink] += city_demand[j];
+    }
+
+    // Calculate Max Flow
+    int total_delivered_power = edmondsKarp(adj, capacity, src, sink);
+
+    cout << total_delivered_power << "\n";
+}
+
 int main()
 {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
 
-    int P, C;
-    if (!(cin >> P >> C)) return 0;
-
-    // Node layout:
-    // Power Plants: 0 to P-1
-    // Cities: P to P+C-1
-    // Super Source: P+C
-    // Super Sink: P+C+1
-    
-    int total_nodes = P + C + 2;
-    int super_source = P + C;
-    int super_sink = P + C + 1;
-
-    vector<vector<edge>> adj(total_nodes);
-    vector<vector<int>> capacity(total_nodes, vector<int>(total_nodes, 0));
-
-    // 1. Connect Super Source to each Power Plant
-    for (int i = 0; i < P; i++)
-    {
-        int cap;
-        cin >> cap;
-
-        adj[super_source].push_back(edge(i));
-        adj[i].push_back(edge(super_source)); // Reverse edge for residual graph
-
-        capacity[super_source][i] += cap;
-    }
-
-    // 2. Connect each City to Super Sink
-    for (int j = 0; j < C; j++)
-    {
-        int city_node = P + j;
-        int demand;
-        cin >> demand;
-
-        adj[city_node].push_back(edge(super_sink));
-        adj[super_sink].push_back(edge(city_node)); 
-
-        capacity[city_node][super_sink] += demand;
-    }
-
-  
-    int M;
-    cin >> M;
-
-    for (int i = 0; i < M; i++)
-    {
-        int u, v, cap;
-        cin >> u >> v >> cap;
-
-        adj[u].push_back(edge(v));
-        adj[v].push_back(edge(u));
-
-        capacity[u][v] += cap; 
-    }
-
-   
-    cout << fordFulkerson(adj, capacity, super_source, super_sink) << endl;
+    solve();
 
     return 0;
 }

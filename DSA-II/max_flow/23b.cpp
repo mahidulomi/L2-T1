@@ -1,134 +1,182 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-const int INF = 1e9;
+class edge
+{
+public:
+    int V;
 
-int N, M, P;
-vector<vector<int>> cap;
-vector<vector<int>> adj;
+    edge(int V)
+    {
+        this->V = V;
+    }
+};
 
+// Edmonds-Karp uses BFS to find the shortest augmenting path
+bool bfs(const vector<vector<edge>> &adj,
+         const vector<vector<int>> &capacity,
+         vector<int> &parent,
+         int src,
+         int sink)
+{
+    int n = adj.size();
 
-bool max_flow_bfs(int src, int sink, vector<int>& parent) {
-    fill(parent.begin(), parent.end(), -1);
-    parent[src] = -2;
-    queue<pair<int, int>> q;
-    q.push({src, INF});
+    vector<bool> vis(n, false);
+    queue<int> q;
 
-    while (!q.empty()) {
-        int u = q.front().first;
-        int flow = q.front().second;
+    q.push(src);
+    vis[src] = true;
+    parent[src] = -1;
+
+    while (!q.empty())
+    {
+        int u = q.front();
         q.pop();
 
-        for (int v : adj[u]) {
-            if (parent[v] == -1 && cap[u][v] > 0) {
+        for (auto e : adj[u])
+        {
+            int v = e.V;
+
+            if (!vis[v] && capacity[u][v] > 0)
+            {
+                vis[v] = true;
                 parent[v] = u;
-                int new_flow = min(flow, cap[u][v]);
-                if (v == sink) return true;
-                q.push({v, new_flow});
+                q.push(v);
+
+                if (v == sink)
+                    return true;
             }
         }
     }
+
     return false;
 }
 
-void runMaxFlow(int src, int sink) {
-    vector<int> parent(N + 1);
-    while (max_flow_bfs(src, sink, parent)) {
-        int path_flow = INF;
-        for (int v = sink; v != src; v = parent[v]) {
+int edmondsKarp(const vector<vector<edge>> &adj,
+                 vector<vector<int>> capacity, // Passed by value to work on a copy
+                 int src,
+                 int sink)
+{
+    int n = adj.size();
+    vector<int> parent(n);
+    int maxFlow = 0;
+
+    while (bfs(adj, capacity, parent, src, sink))
+    {
+        int pathFlow = INT_MAX;
+
+        // Find minimum residual capacity along the path
+        for (int v = sink; v != src; v = parent[v])
+        {
             int u = parent[v];
-            path_flow = min(path_flow, cap[u][v]);
+            pathFlow = min(pathFlow, capacity[u][v]);
         }
-        for (int v = sink; v != src; v = parent[v]) {
+
+        // Update residual capacities
+        for (int v = sink; v != src; v = parent[v])
+        {
             int u = parent[v];
-            cap[u][v] -= path_flow;
-            cap[v][u] += path_flow;
+
+            capacity[u][v] -= pathFlow;
+            capacity[v][u] += pathFlow;
         }
+
+        maxFlow += pathFlow;
     }
+
+    return maxFlow;
 }
 
-int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
+struct Proposal
+{
+    int u, v, c;
+};
 
-    if (!(cin >> N >> M)) return 0;
+void solve()
+{
+    int N, M;
+    if (!(cin >> N >> M))
+        return;
 
-    cap.assign(N + 1, vector<int>(N + 1, 0));
-    adj.resize(N + 1);
+    // Node 1 = Uttara (Source), Node N = Motijheel (Sink)
+    int src = 1;
+    int sink = N;
+    int total_nodes = N + 1;
 
-    for (int i = 0; i < M; i++) {
+    vector<vector<edge>> base_adj(total_nodes);
+    vector<vector<int>> base_capacity(total_nodes, vector<int>(total_nodes, 0));
+
+    // Input existing roads
+    for (int i = 0; i < M; i++)
+    {
         int u, v, c;
         cin >> u >> v >> c;
-        if (cap[u][v] == 0 && cap[v][u] == 0) {
-            adj[u].push_back(v);
-            adj[v].push_back(u);
-        }
-        cap[u][v] += c;
+
+        base_adj[u].push_back(edge(v));
+        base_adj[v].push_back(edge(u)); // Residual reverse edge
+        base_capacity[u][v] += c;
     }
 
-    int src = 1, sink = N;
-
-  
-    runMaxFlow(src, sink);
-
-    
-    vector<bool> fromSource(N + 1, false);
-    queue<int> q1;
-    q1.push(src);
-    fromSource[src] = true;
-
-    while (!q1.empty()) {
-        int u = q1.front();
-        q1.pop();
-        for (int v : adj[u]) {
-            if (!fromSource[v] && cap[u][v] > 0) {
-                fromSource[v] = true;
-                q1.push(v);
-            }
-        }
-    }
-
-   
-    vector<bool> toSink(N + 1, false);
-    queue<int> q2;
-    q2.push(sink);
-    toSink[sink] = true;
-
-    while (!q2.empty()) {
-        int u = q2.front();
-        q2.pop();
-        for (int v : adj[u]) {
-            // v -> u ক্যাপাসিটি থাকলে মানে v থেকে u (বা Sink) এ যাওয়া সম্ভব
-            if (!toSink[v] && cap[v][u] > 0) {
-                toSink[v] = true;
-                q2.push(v);
-            }
-        }
-    }
-
-    // ৪. ফ্লাইওভার প্রসেস করা
+    int P;
     cin >> P;
-    vector<int> result;
 
-    for (int i = 1; i <= P; i++) {
-        int u, v, c;
-        cin >> u >> v >> c;
+    vector<Proposal> proposals(P);
+    for (int i = 0; i < P; i++)
+    {
+        cin >> proposals[i].u >> proposals[i].v >> proposals[i].c;
+    }
 
-        // Source থেকে u যাওয়া যায় এবং v থেকে Sink এ যাওয়া যায়
-        if (fromSource[u] && toSink[v]) {
-            result.push_back(i);
+    // 1. Calculate Base Max Flow without any new flyover
+    int base_max_flow = edmondsKarp(base_adj, base_capacity, src, sink);
+
+    vector<int> valid_proposals;
+
+    // 2. Evaluate each flyover project independently
+    for (int i = 0; i < P; i++)
+    {
+        vector<vector<edge>> adj = base_adj;
+        vector<vector<int>> capacity = base_capacity;
+
+        int u = proposals[i].u;
+        int v = proposals[i].v;
+        int c = proposals[i].c;
+
+        // Add proposed flyover
+        adj[u].push_back(edge(v));
+        adj[v].push_back(edge(u));
+        capacity[u][v] += c;
+
+        // Calculate new flow
+        int new_max_flow = edmondsKarp(adj, capacity, src, sink);
+
+        // Check if flow strictly increases
+        if (new_max_flow > base_max_flow)
+        {
+            valid_proposals.push_back(i + 1); // 1-based index corresponding to input order
         }
     }
 
-    // ৫. আউটপুট প্রিন্ট
-    if (result.empty()) {
+    // Output Result
+    if (valid_proposals.empty())
+    {
         cout << "None\n";
-    } else {
-        for (int i = 0; i < result.size(); i++) {
-            cout << result[i] << (i == result.size() - 1 ? "" : " ");
+    }
+    else
+    {
+        for (int i = 0; i < (int)valid_proposals.size(); i++)
+        {
+            cout << valid_proposals[i] << (i == (int)valid_proposals.size() - 1 ? "" : " ");
         }
         cout << "\n";
     }
+}
+
+int main()
+{
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    solve();
 
     return 0;
 }

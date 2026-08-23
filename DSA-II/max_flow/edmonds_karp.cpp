@@ -1,7 +1,18 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-bool bfs(vector<vector<int>> &adj,
+class edge
+{
+public:
+    int V;
+
+    edge(int V)
+    {
+        this->V = V;
+    }
+};
+
+bool bfs(vector<vector<edge>> &adj,
          vector<vector<int>> &capacity,
          vector<int> &parent,
          int src,
@@ -23,7 +34,7 @@ bool bfs(vector<vector<int>> &adj,
 
         for (auto e : adj[u])
         {
-            int v = e;
+            int v = e.V;
 
             if (!vis[v] && capacity[u][v] > 0)
             {
@@ -40,10 +51,10 @@ bool bfs(vector<vector<int>> &adj,
     return false;
 }
 
-int edmondsKarp(vector<vector<int>> &adj,
-                vector<vector<int>> &capacity,
-                int src,
-                int sink)
+int edmondsKarp(vector<vector<edge>> &adj,
+                 vector<vector<int>> &capacity,
+                 int src,
+                 int sink)
 {
     int n = adj.size();
 
@@ -55,14 +66,14 @@ int edmondsKarp(vector<vector<int>> &adj,
     {
         int pathFlow = INT_MAX;
 
-        
+  
         for (int v = sink; v != src; v = parent[v])
         {
             int u = parent[v];
             pathFlow = min(pathFlow, capacity[u][v]);
         }
 
-        
+       
         for (int v = sink; v != src; v = parent[v])
         {
             int u = parent[v];
@@ -79,27 +90,30 @@ int edmondsKarp(vector<vector<int>> &adj,
 
 int main()
 {
-    int N, M;
-    cin >> N >> M;
+    int V, E;
+    cin >> V >> E;
 
-    vector<vector<int>> adj(N);
-    vector<vector<int>> capacity(N, vector<int>(N, 0));
+    // 1-based indexing
+    vector<vector<edge>> adj(V + 1);
+    vector<vector<int>> capacity(V + 1, vector<int>(V + 1, 0));
 
-    for (int i = 0; i < M; i++)
+    for (int i = 0; i < E; i++)
     {
-        int u, v, w;
-        cin >> u >> v >> w;
+        int u, v, cap;
+        cin >> u >> v >> cap;
 
-        adj[u].push_back(v);
-        adj[v].push_back(u); 
+        adj[u].push_back(edge(v));
+        adj[v].push_back(edge(u)); // Reverse edge for residual graph
 
-        capacity[u][v] += w;
+        capacity[u][v] += cap; // Supports multiple edges
     }
 
-    int source = 0;
-    int sink = N - 1;
+    int src, sink;
+    cin >> src >> sink;
 
-    cout << edmondsKarp(adj, capacity, source, sink) << endl;
+    cout << "Maximum Flow = "
+         << edmondsKarp(adj, capacity, src, sink)
+         << endl;
 
     return 0;
 }
